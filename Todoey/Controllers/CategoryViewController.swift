@@ -8,8 +8,10 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+
+class CategoryViewController: SwipeTableViewController {
     
     var realm = try! Realm()
     var categories : Results<Category>?
@@ -20,6 +22,8 @@ class CategoryViewController: UITableViewController {
         super.viewDidLoad()
         
         loadCategories()
+        tableView.separatorStyle = .none
+       
     }
     
      // MARK: - TableView Datasource Methods
@@ -28,13 +32,29 @@ class CategoryViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    
+            let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
-        let  cell = tableView.dequeueReusableCell(withIdentifier: "CategotyCell", for: indexPath)
+            if let category = categories?[indexPath.row]{
+            
+            cell.textLabel?.text = category.name
+            
+            guard let categoryColor = UIColor(hexString: category.color) else {fatalError()}
+            
+            cell.backgroundColor = categoryColor
+            
+            cell.textLabel?.textColor = ContrastColorOf(categoryColor, returnFlat: true)
+        }
         
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories add yet"
         
+        
+            cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories add yet"
+            cell.backgroundColor = UIColor(hexString: categories?[indexPath.row].color ?? "1D9BF6")
+        
+
         return cell
     }
+
     
 
     // Mark: - Add new Category
@@ -46,6 +66,7 @@ class CategoryViewController: UITableViewController {
             
             let  newCategory = Category()
             newCategory.name = textField.text!
+            newCategory.color = UIColor.randomFlat.hexValue()
             self.saveCategories(category: newCategory)
         }
         alert.addTextField { (alertTextField) in
@@ -56,6 +77,25 @@ class CategoryViewController: UITableViewController {
         alert.addAction(action)
         present(alert, animated: true, completion: nil)
     }
+    
+    //MARK: - Delete data from swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        if let categoryForDeletion = self.categories?[indexPath.row]{
+            do{
+                try! self.realm.write {
+                    self.realm.delete(categoryForDeletion)
+                }
+          
+            }
+            //tableView.reloadData()
+        }
+    }
+        
+    
+    
+
+    
     
      // MARK: - TableView Delegate Methods
     
@@ -92,3 +132,21 @@ func loadCategories(){
         tableView.reloadData()
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
